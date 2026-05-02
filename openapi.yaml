@@ -121,59 +121,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlayerStats'
 
-  /players/stats/extended:
-    get:
-      tags: [Players]
-      summary: Расширенная статистика игрока
-      parameters:
-        - in: header
-          name: STEAMID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Extended player stats
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlayerExtendedStats'
-
-  /players/stats/top:
-    get:
-      tags: [Players]
-      summary: Топ игроков по категории
-      parameters:
-        - in: query
-          name: category
-          required: true
-          schema:
-            type: string
-            enum: [kills, deaths, time, headshots, accuracy]
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 10
-      responses:
-        "200":
-          description: Top players
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    SteamID:
-                      type: string
-                    Name:
-                      type: string
-                    Value:
-                      type: number
-
   /registrations:
     post:
       tags: [Auth]
@@ -490,4 +437,3 @@ tags:
   - name: Settings
   - name: Auth
   - name: Events
-  
