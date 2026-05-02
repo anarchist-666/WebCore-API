@@ -1,4 +1,5 @@
 openapi: 3.1.0
+
 info:
   title: WebCore API
   version: 1.0.0
@@ -9,13 +10,10 @@ servers:
     variables:
       apiPath:
         default: ""
-        description: Базовый путь API (из конфига WebCore)
       port:
         default: "28015"
-        description: Порт сервера
       serverIp:
         default: 127.0.0.1
-        description: IP адрес сервера
 
 security:
   - ApiKeyAuth: []
@@ -87,283 +85,28 @@ paths:
                   items:
                     $ref: "#/components/schemas/LogStructure"
 
-  /players/list:
-    get:
-      tags: [Players]
-      summary: Список игроков онлайн
-      responses:
-        "200":
-          description: Players list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/PlayerListEntry"
-
-  /players/stats:
-    get:
-      tags: [Players]
-      summary: Базовая статистика игрока
-      parameters:
-        - in: header
-          name: STEAMID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Player stats
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PlayerStats"
-
-  /players/stats/extended:
-    get:
-      tags: [Players]
-      summary: Расширенная статистика игрока
-      parameters:
-        - in: header
-          name: STEAMID
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Extended player stats
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/PlayerExtendedStats"
-
-  /players/stats/top:
-    get:
-      tags: [Players]
-      summary: Топ игроков по категории
-      parameters:
-        - in: query
-          name: category
-          required: true
-          schema:
-            type: string
-            enum: [kills, deaths, time, headshots, accuracy]
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 10
-      responses:
-        "200":
-          description: Top players
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    SteamID:
-                      type: string
-                    Name:
-                      type: string
-                    Value:
-                      type: number
-
-  /registrations:
-    post:
-      tags: [Auth]
-      summary: Регистрация WebPanel
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginPassword"
-      responses:
-        "200":
-          description: OK
-        "400":
-          description: Bad Request
-
-  /server/command:
-    post:
-      tags: [Server]
-      summary: Выполнить консольную команду
-      parameters:
-        - in: header
-          name: CMD
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  output:
-                    type: string
-
-  /server/download:
-    get:
-      tags: [Server]
-      summary: Скачать файл
-      parameters:
-        - in: header
-          name: File-Name
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: File
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-
-  /server/info:
-    get:
-      tags: [Server]
-      summary: Информация о сервере
-      responses:
-        "200":
-          description: Server info
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServerInfo"
-
-  /server/map:
-    get:
-      tags: [Server]
-      summary: Карта сервера
-      responses:
-        "200":
-          description: PNG map
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-
-  /server/tree:
-    get:
-      tags: [Server]
-      summary: Файловое дерево
-      responses:
-        "200":
-          description: Tree
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FileTreeNode"
-
-  /server/upload:
-    post:
-      tags: [Server]
-      summary: Загрузка файла
-      parameters:
-        - in: header
-          name: File-Name
-          required: true
-          schema:
-            type: string
-        - in: header
-          name: Path
-          schema:
-            type: string
-            default: /
-      requestBody:
-        required: true
-        content:
-          application/octet-stream:
-            schema:
-              type: string
-              format: binary
-      responses:
-        "200":
-          description: Uploaded
-
-  /setting/plugins/list:
-    get:
-      tags: [Settings]
-      summary: Список плагинов
-      responses:
-        "200":
-          description: Plugin list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-
-  /setting/plugins/plugin:
-    get:
-      tags: [Settings]
-      summary: Конфиг плагина
-      parameters:
-        - in: query
-          name: name
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: format
-          required: true
-          schema:
-            type: string
-            enum: [json, schema]
-      responses:
-        "200":
-          description: Plugin config
-
-  /setting/plugins/save:
-    post:
-      tags: [Settings]
-      summary: Сохранить конфиг
-      parameters:
-        - in: query
-          name: name
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        "200":
-          description: Saved
-
 components:
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
+
     BasicAuth:
       type: http
       scheme: basic
 
   schemas:
+
     LogType:
       type: string
 
     LogStructure:
       type: object
-      required: [Prefix, Log, Date]
+      required:
+        - Prefix
+        - Log
+        - Date
       properties:
         Date:
           type: string
@@ -393,7 +136,6 @@ components:
           type: string
         Id:
           type: integer
-          format: uint64
         Kills:
           type: integer
         Name:
@@ -440,30 +182,12 @@ components:
       properties:
         SteamID:
           type: string
-        OwnerSteamID:
-          type: string
         DisplayName:
           type: string
         Ping:
           type: integer
-        Address:
-          type: string
-        EntityId:
-          type: integer
-        ConnectedSeconds:
-          type: integer
-        ViolationLevel:
-          type: number
-        CurrentLevel:
-          type: number
-        Health:
-          type: number
         Position:
           $ref: "#/components/schemas/Vector3"
-        IsMuted:
-          type: boolean
-        TeamID:
-          type: integer
 
     Vector3:
       type: object
@@ -480,44 +204,16 @@ components:
       properties:
         Hostname:
           type: string
-        MaxPlayers:
-          type: integer
         Players:
           type: integer
-        Queued:
+        MaxPlayers:
           type: integer
-        Joining:
-          type: integer
-        ReservedSlots:
-          type: integer
-        EntityCount:
-          type: integer
-        GameTime:
-          type: string
         Uptime:
           type: integer
         Map:
           type: string
-        Framerate:
-          type: number
-        Memory:
-          type: integer
-        MemoryUsageSystem:
-          type: integer
-        Collections:
-          type: integer
-        NetworkIn:
-          type: integer
-        NetworkOut:
-          type: integer
-        Restarting:
-          type: boolean
-        SaveCreatedTime:
-          type: string
         Version:
           type: integer
-        Protocol:
-          type: string
 
     FileTreeNode:
       type: object
