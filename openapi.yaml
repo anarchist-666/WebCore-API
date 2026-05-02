@@ -1,0 +1,287 @@
+openapi: 3.1.0
+info:
+  title: WebCore API
+  version: 1.0.0
+  description: API для управления Rust сервером через WebCore
+
+servers:
+  - url: http://localhost:{port}/{apiPath}
+    variables:
+      port:
+        default: "28015"
+      apiPath:
+        default: ""
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  schemas:
+    LoginPassword:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+      required: [login, password]
+
+    PlayerStats:
+      type: object
+      properties:
+        Id: { type: integer, format: uint64 }
+        Name: { type: string }
+        Time: { type: string }
+        Kills: { type: integer }
+        Deaths: { type: integer }
+        Suicides: { type: integer }
+        PlayerHits: { type: string }
+        BuildingHits: { type: string }
+        EntityHits: { type: string }
+
+security:
+  - ApiKeyAuth: []
+  - BasicAuth: []
+
+tags:
+  - name: Logs
+    description: Логи сервера и плагинов
+
+  - name: Server
+    description: Управление сервером и системные функции
+
+  - name: Players
+    description: Игроки и статистика
+
+  - name: Settings
+    description: Конфигурации плагинов
+
+  - name: Auth
+    description: Авторизация
+
+  - name: Events
+    description: SSE события
+
+paths:
+
+  # =========================
+  # AUTH
+  # =========================
+  /registrations:
+    post:
+      tags: [Auth]
+      summary: Регистрация логина и пароля WebPanel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPassword'
+      responses:
+        "200": { description: OK }
+        "400": { description: Bad Request }
+
+  # =========================
+  # LOGS
+  # =========================
+  /logs/general:
+    get:
+      tags: [Logs]
+      summary: Общие логи сервера
+      responses:
+        "200":
+          description: Логи
+
+  /logs/plugin:
+    get:
+      tags: [Logs]
+      summary: Логи плагина
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Логи плагина
+
+  # =========================
+  # SERVER
+  # =========================
+  /server/info:
+    get:
+      tags: [Server]
+      summary: Информация о сервере
+      responses:
+        "200":
+          description: Server info
+
+  /server/tree:
+    get:
+      tags: [Server]
+      summary: Файловое дерево сервера
+      responses:
+        "200":
+          description: Tree
+
+  /server/command:
+    post:
+      tags: [Server]
+      summary: Выполнить консольную команду
+      parameters:
+        - in: header
+          name: CMD
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+  /server/map:
+    get:
+      tags: [Server]
+      summary: Карта сервера
+      responses:
+        "200":
+          description: PNG map
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /server/upload:
+    post:
+      tags: [Server]
+      summary: Загрузка файла
+      parameters:
+        - in: header
+          name: File-Name
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200": { description: Uploaded }
+
+  /server/download:
+    get:
+      tags: [Server]
+      summary: Скачать файл
+      parameters:
+        - in: header
+          name: File-Name
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: File
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  # =========================
+  # PLAYERS
+  # =========================
+  /players/list:
+    get:
+      tags: [Players]
+      summary: Список игроков
+      responses:
+        "200":
+          description: Players list
+
+  /players/stats:
+    get:
+      tags: [Players]
+      summary: Статистика игрока
+      parameters:
+        - in: header
+          name: STEAMID
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerStats'
+
+  # =========================
+  # SETTINGS
+  # =========================
+  /setting/plugins/list:
+    get:
+      tags: [Settings]
+      summary: Список плагинов
+      responses:
+        "200":
+          description: Plugin list
+
+  /setting/plugins/plugin:
+    get:
+      tags: [Settings]
+      summary: Конфиг плагина
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema: { type: string }
+        - in: query
+          name: format
+          required: true
+          schema:
+            type: string
+            enum: [json, schema]
+      responses:
+        "200":
+          description: Plugin config
+
+  /setting/plugins/save:
+    post:
+      tags: [Settings]
+      summary: Сохранить конфиг плагина
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Saved }
+
+  # =========================
+  # EVENTS (SSE)
+  # =========================
+  /events:
+    get:
+      tags: [Events]
+      summary: SSE поток событий
+      parameters:
+        - in: query
+          name: event
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
