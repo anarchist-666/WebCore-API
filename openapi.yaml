@@ -5,8 +5,11 @@ info:
   description: API для управления Rust сервером через WebCore
 
 servers:
-  - url: http://localhost:{port}/{apiPath}
+  - url: http://{serverIp}:{port}/{apiPath}
     variables:
+      serverIp:
+        default: "127.0.0.1"
+        description: IP адрес сервера (например 192.168.1.10 или домен)
       port:
         default: "28015"
       apiPath:
