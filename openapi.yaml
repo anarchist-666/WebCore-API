@@ -97,10 +97,6 @@ components:
       scheme: basic
 
   schemas:
-
-    LogType:
-      type: string
-
     LogStructure:
       type: object
       required:
@@ -114,7 +110,8 @@ components:
         Log:
           type: string
         Prefix:
-          $ref: "#/components/schemas/LogType"
+          type: string
+          description: "Log level/type prefix (e.g., Info, Warning, Error)"
 
     LoginPassword:
       type: object
@@ -229,8 +226,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FileTreeNode"
-
-  responses: {}
 
 tags:
   - name: Logs
