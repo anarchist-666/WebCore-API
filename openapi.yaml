@@ -1,31 +1,389 @@
----
-LogStructure:
-  properties:
-    Date:
-      format: date-time
-      type: string
-    Log:
-      type: string
-    Prefix:
-      $ref: '#/components/schemas/LogType'
-  required:
-    - Prefix
-    - Log
-    - Date
-  type: object
+openapi: 3.1.0
+info:
+  title: WebCore API
+  version: 1.0.0
+  description: API для управления Rust сервером через WebCore
+
+servers:
+  - url: http://{serverIp}:{port}/{apiPath}
+    variables:
+      apiPath:
+        default: ""
+        description: Базовый путь API (из конфига WebCore)
+      port:
+        default: "28015"
+        description: Порт сервера
+      serverIp:
+        default: 127.0.0.1
+        description: IP адрес сервера
+
+security:
+  - ApiKeyAuth: []
+  - BasicAuth: []
+
+paths:
+  /events:
+    get:
+      tags: [Events]
+      summary: SSE поток событий
+      parameters:
+        - in: query
+          name: event
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /logs/general:
+    get:
+      tags: [Logs]
+      summary: Общие логи сервера
+      responses:
+        "200":
+          description: Логи
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Log:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LogStructure"
+                  Error:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LogStructure"
+                  Warning:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LogStructure"
+
+  /logs/plugin:
+    get:
+      tags: [Logs]
+      summary: Логи плагина
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Логи плагина
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/LogStructure"
+
+  /players/list:
+    get:
+      tags: [Players]
+      summary: Список игроков онлайн
+      responses:
+        "200":
+          description: Players list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerListEntry"
+
+  /players/stats:
+    get:
+      tags: [Players]
+      summary: Базовая статистика игрока
+      parameters:
+        - in: header
+          name: STEAMID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerStats"
+
+  /players/stats/extended:
+    get:
+      tags: [Players]
+      summary: Расширенная статистика игрока
+      parameters:
+        - in: header
+          name: STEAMID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Extended player stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerExtendedStats"
+
+  /players/stats/top:
+    get:
+      tags: [Players]
+      summary: Топ игроков по категории
+      parameters:
+        - in: query
+          name: category
+          required: true
+          schema:
+            type: string
+            enum: [kills, deaths, time, headshots, accuracy]
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        "200":
+          description: Top players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    SteamID:
+                      type: string
+                    Name:
+                      type: string
+                    Value:
+                      type: number
+
+  /registrations:
+    post:
+      tags: [Auth]
+      summary: Регистрация WebPanel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginPassword"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+
+  /server/command:
+    post:
+      tags: [Server]
+      summary: Выполнить консольную команду
+      parameters:
+        - in: header
+          name: CMD
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  output:
+                    type: string
+
+  /server/download:
+    get:
+      tags: [Server]
+      summary: Скачать файл
+      parameters:
+        - in: header
+          name: File-Name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /server/info:
+    get:
+      tags: [Server]
+      summary: Информация о сервере
+      responses:
+        "200":
+          description: Server info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerInfo"
+
+  /server/map:
+    get:
+      tags: [Server]
+      summary: Карта сервера
+      responses:
+        "200":
+          description: PNG map
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+  /server/tree:
+    get:
+      tags: [Server]
+      summary: Файловое дерево
+      responses:
+        "200":
+          description: Tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileTreeNode"
+
+  /server/upload:
+    post:
+      tags: [Server]
+      summary: Загрузка файла
+      parameters:
+        - in: header
+          name: File-Name
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Path
+          schema:
+            type: string
+            default: /
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Uploaded
+
+  /setting/plugins/list:
+    get:
+      tags: [Settings]
+      summary: Список плагинов
+      responses:
+        "200":
+          description: Plugin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /setting/plugins/plugin:
+    get:
+      tags: [Settings]
+      summary: Конфиг плагина
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: format
+          required: true
+          schema:
+            type: string
+            enum: [json, schema]
+      responses:
+        "200":
+          description: Plugin config
+
+  /setting/plugins/save:
+    post:
+      tags: [Settings]
+      summary: Сохранить конфиг
+      parameters:
+        - in: query
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Saved
+
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BasicAuth:
+      type: http
+      scheme: basic
+
   schemas:
     LogType:
       type: string
+
+    LogStructure:
+      type: object
+      required: [Prefix, Log, Date]
+      properties:
+        Date:
+          type: string
+          format: date-time
+        Log:
+          type: string
+        Prefix:
+          $ref: "#/components/schemas/LogType"
+
     LoginPassword:
+      type: object
+      required: [login, password]
       properties:
         login:
           type: string
         password:
           type: string
-      required: [ login, password ]
-      type: object
+
     PlayerStats:
+      type: object
       properties:
         BuildingHits:
           type: string
@@ -34,8 +392,8 @@ components:
         EntityHits:
           type: string
         Id:
-          format: uint64
           type: integer
+          format: uint64
         Kills:
           type: integer
         Name:
@@ -46,8 +404,9 @@ components:
           type: integer
         Time:
           type: string
-      type: object
+
     PlayerExtendedStats:
+      type: object
       properties:
         SteamID:
           type: string
@@ -75,8 +434,9 @@ components:
           type: array
           items:
             type: string
-      type: object
+
     PlayerListEntry:
+      type: object
       properties:
         SteamID:
           type: string
@@ -99,13 +459,14 @@ components:
         Health:
           type: number
         Position:
-          $ref: '#/components/schemas/Vector3'
+          $ref: "#/components/schemas/Vector3"
         IsMuted:
           type: boolean
         TeamID:
           type: integer
-      type: object
+
     Vector3:
+      type: object
       properties:
         x:
           type: number
@@ -113,8 +474,9 @@ components:
           type: number
         z:
           type: number
-      type: object
+
     ServerInfo:
+      type: object
       properties:
         Hostname:
           type: string
@@ -156,444 +518,34 @@ components:
           type: integer
         Protocol:
           type: string
-      type: object
+
     FileTreeNode:
+      type: object
       properties:
         name:
           type: string
         type:
-          enum: [ file, directory ]
           type: string
+          enum: [file, directory]
         size:
           type: integer
         children:
           type: array
           items:
-            $ref: '#/components/schemas/FileTreeNode'
-      type: object
-    enum:
-      - Error
-      - Assert
-      - Warning
-      - Log
-      - Exception
-  securitySchemes:
-    ApiKeyAuth:
-      in: header
-      name: X-API-Key
-      type: apiKey
-    BasicAuth:
-      scheme: basic
-      type: http
-info:
-  description: API для управления Rust сервером через WebCore
-  title: WebCore API
-  version: 1.0.0
-openapi: 3.1.0
-paths:
-  # =========================
-  # EVENTS (SSE)
-  # =========================
-  /events:
-    get:
-      parameters:
-        - in: query
-          name: event
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            text/event-stream:
-              schema:
-                type: string
-          description: Event stream
-      summary: SSE поток событий
-      tags: [ Events ]
-  
-  # =========================
-  # LOGS
-  # =========================
-  /logs/general:
-    get:
-      responses:
-        '200':
-          description: Логи
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  Log:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/LogStructure'
-                  Error:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/LogStructure'
-                  Warning:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/LogStructure'
-      summary: Общие логи сервера
-      tags: [ Logs ]
-  
-  /logs/plugin:
-    get:
-      parameters:
-        - in: query
-          name: name
-          required: true
-          schema:
-            type: string
-          description: Имя плагина (или 'all' для всех)
-      responses:
-        '200':
-          description: Логи плагина
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/LogStructure'
-      summary: Логи плагина
-      tags: [ Logs ]
-  
-  # =========================
-  # PLAYERS
-  # =========================
-  /players/list:
-    get:
-      responses:
-        '200':
-          description: Players list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PlayerListEntry'
-      summary: Список игроков онлайн
-      tags: [ Players ]
-  
-  /players/stats:
-    get:
-      parameters:
-        - in: header
-          name: STEAMID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlayerStats'
-          description: Player stats
-      summary: Базовая статистика игрока
-      tags: [ Players ]
-  
-  /players/stats/extended:
-    get:
-      parameters:
-        - in: header
-          name: STEAMID
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlayerExtendedStats'
-          description: Extended player statistics
-      summary: Расширенная статистика игрока
-      tags: [ Players ]
-  
-  /players/stats/top:
-    get:
-      parameters:
-        - in: query
-          name: category
-          required: true
-          schema:
-            enum: [ kills, deaths, time, headshots, accuracy ]
-            type: string
-        - in: query
-          name: limit
-          required: false
-          schema:
-            default: 10
-            maximum: 100
-            minimum: 1
-            type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  properties:
-                    SteamID:
-                      type: string
-                    Name:
-                      type: string
-                    Value:
-                      type: number
-                  type: object
-          description: Top players by category
-      summary: Топ игроков по категории
-      tags: [ Players ]
-  
-  # =========================
-  # AUTH
-  # =========================
-  /registrations:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginPassword'
-        required: true
-      responses:
-        '200':
-          description: OK
-        '400':
-          description: Bad Request
-      summary: Регистрация логина и пароля WebPanel
-      tags: [ Auth ]
-  
-  # =========================
-  # SERVER
-  # =========================
-  /server/command:
-    post:
-      parameters:
-        - in: header
-          name: CMD
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  output:
-                    type: string
-      summary: Выполнить консольную команду
-      tags: [ Server ]
-  
-  /server/download:
-    get:
-      parameters:
-        - in: header
-          name: File-Name
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          content:
-            application/octet-stream:
-              schema:
-                format: binary
-                type: string
-          description: File
-      summary: Скачать файл
-      tags: [ Server ]
-  
-  /server/info:
-    get:
-      responses:
-        '200':
-          description: Server info
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServerInfo'
-      summary: Информация о сервере
-      tags: [ Server ]
-  
-  /server/map:
-    get:
-      responses:
-        '200':
-          content:
-            image/png:
-              schema:
-                format: binary
-                type: string
-          description: PNG map
-      summary: Карта сервера
-      tags: [ Server ]
-  
-  /server/tree:
-    get:
-      responses:
-        '200':
-          description: Tree
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FileTreeNode'
-      summary: Файловое дерево сервера
-      tags: [ Server ]
-  
-  /server/upload:
-    post:
-      parameters:
-        - in: header
-          name: File-Name
-          required: true
-          schema:
-            type: string
-        - in: header
-          name: Path
-          required: false
-          schema:
-            type: string
-            default: /
-      requestBody:
-        content:
-          application/octet-stream:
-            schema:
-              format: binary
-              type: string
-        required: true
-      responses:
-        '200':
-          description: Uploaded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                  path:
-                    type: string
-      summary: Загрузка файла
-      tags: [ Server ]
-  
-  # =========================
-  # SETTINGS
-  # =========================
-  /setting/plugins/list:
-    get:
-      responses:
-        '200':
-          description: Plugin list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-      summary: Список плагинов
-      tags: [ Settings ]
-  
-  /setting/plugins/plugin:
-    get:
-      parameters:
-        - in: query
-          name: name
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: format
-          required: true
-          schema:
-            enum: [ json, schema ]
-            type: string
-      responses:
-        '200':
-          description: Plugin config
-          content:
-            application/json:
-              schema:
-                type: object
-      summary: Конфиг плагина
-      tags: [ Settings ]
-  
-  /setting/plugins/save:
-    post:
-      parameters:
-        - in: query
-          name: name
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-        required: true
-      responses:
-        '200':
-          description: Saved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-      summary: Сохранить конфиг плагина
-      tags: [ Settings ]
+            $ref: "#/components/schemas/FileTreeNode"
 
-security:
-  - ApiKeyAuth: []
-  - BasicAuth: []
-
-servers:
-  - url: http://{serverIp}:{port}/{apiPath}
-    variables:
-      apiPath:
-        default: ''
-        description: Базовый путь API (из конфига WebCore)
-      port:
-        default: '28015'
-        description: Порт сервера
-      serverIp:
-        default: 127.0.0.1
-        description: IP адрес сервера (например 192.168.1.10 или домен)
+  responses: {}
 
 tags:
-  - description: Логи сервера и плагинов
-    name: Logs
-  - description: Управление сервером и системные функции
-    name: Server
-  - description: Игроки и статистика
-    name: Players
-  - description: Конфигурации плагинов
-    name: Settings
-  - description: Авторизация
-    name: Auth
-  - description: SSE события
-    name: Events
+  - name: Logs
+    description: Логи сервера и плагинов
+  - name: Server
+    description: Управление сервером
+  - name: Players
+    description: Игроки и статистика
+  - name: Settings
+    description: Конфигурации плагинов
+  - name: Auth
+    description: Авторизация
+  - name: Events
+    description: SSE события
