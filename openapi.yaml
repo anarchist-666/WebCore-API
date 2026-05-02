@@ -71,6 +71,9 @@ paths:
     get:
       tags: [Logs]
       summary: Логи плагина
+      description: |
+        QueryString:
+        - name: имя плагина или `all`
       parameters:
         - in: query
           name: name
@@ -83,11 +86,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/LogStructure'
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/LogStructure'
+                  - type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/LogStructure'
 
   /players/list:
     get:
@@ -138,9 +145,10 @@ paths:
           description: Bad Request
 
   /server/command:
-    post:
+    get:
       tags: [Server]
       summary: Выполнить консольную команду
+      description: Команда передается через заголовок `CMD`
       parameters:
         - in: header
           name: CMD
@@ -149,16 +157,20 @@ paths:
             type: string
       responses:
         "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  output:
-                    type: string
+          description: Команда выполнена
+    post:
+      tags: [Server]
+      summary: Выполнить консольную команду
+      description: Команда передается через заголовок `CMD`
+      parameters:
+        - in: header
+          name: CMD
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Команда выполнена
 
   /server/download:
     get:
@@ -223,14 +235,9 @@ paths:
       parameters:
         - in: header
           name: File-Name
-          required: true
+          required: false
           schema:
             type: string
-        - in: header
-          name: Path
-          schema:
-            type: string
-            default: /
       requestBody:
         required: true
         content:
@@ -260,6 +267,10 @@ paths:
     get:
       tags: [Settings]
       summary: Конфиг плагина
+      description: |
+        QueryString:
+        - name: имя плагина
+        - format: `json` или `schema`
       parameters:
         - in: query
           name: name
@@ -275,11 +286,20 @@ paths:
       responses:
         "200":
           description: Plugin config
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                  - type: string
 
   /setting/plugins/save:
     post:
       tags: [Settings]
       summary: Сохранить конфиг
+      description: |
+        QueryString:
+        - name: имя плагина
       parameters:
         - in: query
           name: name
