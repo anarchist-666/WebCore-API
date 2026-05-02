@@ -1,4 +1,5 @@
-openapi: 3.1.0
+openapi: 3.0.3
+
 info:
   title: WebCore API
   version: 1.0.0
@@ -7,21 +8,22 @@ info:
 servers:
   - url: http://{serverIp}:{port}/{apiPath}
     variables:
-      apiPath:
-        default: ""
-        description: Базовый путь API (из конфига WebCore)
-      port:
-        default: "28015"
-        description: Порт сервера
       serverIp:
         default: 127.0.0.1
         description: IP адрес сервера
+      port:
+        default: "28015"
+        description: Порт сервера
+      apiPath:
+        default: ""
+        description: Базовый путь API
 
 security:
   - ApiKeyAuth: []
   - BasicAuth: []
 
 paths:
+
   /events:
     get:
       tags: [Events]
@@ -40,30 +42,30 @@ paths:
               schema:
                 type: string
 
-/logs/general:
-  get:
-    tags: [Logs]
-    summary: Общие логи сервера
-    responses:
-      "200":
-        description: Логи
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                Log:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/LogStructure'
-                Error:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/LogStructure'
-                Warning:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/LogStructure'
+  /logs/general:
+    get:
+      tags: [Logs]
+      summary: Общие логи сервера
+      responses:
+        "200":
+          description: Логи
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Log:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogStructure'
+                  Error:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogStructure'
+                  Warning:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LogStructure'
 
   /logs/plugin:
     get:
@@ -85,7 +87,7 @@ paths:
                 additionalProperties:
                   type: array
                   items:
-                    $ref: "#/components/schemas/LogStructure"
+                    $ref: '#/components/schemas/LogStructure'
 
   /players/list:
     get:
@@ -99,7 +101,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PlayerListEntry"
+                  $ref: '#/components/schemas/PlayerListEntry'
 
   /players/stats:
     get:
@@ -117,7 +119,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlayerStats"
+                $ref: '#/components/schemas/PlayerStats'
 
   /players/stats/extended:
     get:
@@ -135,7 +137,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PlayerExtendedStats"
+                $ref: '#/components/schemas/PlayerExtendedStats'
 
   /players/stats/top:
     get:
@@ -181,7 +183,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginPassword"
+              $ref: '#/components/schemas/LoginPassword'
       responses:
         "200":
           description: OK
@@ -240,7 +242,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ServerInfo"
+                $ref: '#/components/schemas/ServerInfo'
 
   /server/map:
     get:
@@ -265,7 +267,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileTreeNode"
+                $ref: '#/components/schemas/FileTreeNode'
 
   /server/upload:
     post:
@@ -348,18 +350,22 @@ paths:
           description: Saved
 
 components:
+
   securitySchemes:
     ApiKeyAuth:
       type: apiKey
       in: header
       name: X-API-Key
+
     BasicAuth:
       type: http
       scheme: basic
 
   schemas:
+
     LogType:
       type: string
+      enum: [Error, Assert, Warning, Log, Exception]
 
     LogStructure:
       type: object
@@ -371,7 +377,7 @@ components:
         Log:
           type: string
         Prefix:
-          $ref: "#/components/schemas/LogType"
+          $ref: '#/components/schemas/LogType'
 
     LoginPassword:
       type: object
@@ -385,167 +391,102 @@ components:
     PlayerStats:
       type: object
       properties:
-        BuildingHits:
-          type: string
-        Deaths:
-          type: integer
-        EntityHits:
-          type: string
+        BuildingHits: { type: string }
+        Deaths: { type: integer }
+        EntityHits: { type: string }
         Id:
           type: integer
-          format: uint64
-        Kills:
-          type: integer
-        Name:
-          type: string
-        PlayerHits:
-          type: string
-        Suicides:
-          type: integer
-        Time:
-          type: string
+          format: int64
+        Kills: { type: integer }
+        Name: { type: string }
+        PlayerHits: { type: string }
+        Suicides: { type: integer }
+        Time: { type: string }
 
     PlayerExtendedStats:
       type: object
       properties:
-        SteamID:
-          type: string
-        Name:
-          type: string
-        TimePlayed:
-          type: string
-        Kills:
-          type: integer
-        Deaths:
-          type: integer
-        Suicides:
-          type: integer
-        Headshots:
-          type: integer
-        Accuracy:
-          type: number
-        ResourcesGathered:
-          type: integer
-        BuildingBlocksPlaced:
-          type: integer
-        BlueprintsLearned:
-          type: integer
+        SteamID: { type: string }
+        Name: { type: string }
+        TimePlayed: { type: string }
+        Kills: { type: integer }
+        Deaths: { type: integer }
+        Suicides: { type: integer }
+        Headshots: { type: integer }
+        Accuracy: { type: number }
+        ResourcesGathered: { type: integer }
+        BuildingBlocksPlaced: { type: integer }
+        BlueprintsLearned: { type: integer }
         MonumentsVisited:
           type: array
-          items:
-            type: string
+          items: { type: string }
 
     PlayerListEntry:
       type: object
       properties:
-        SteamID:
-          type: string
-        OwnerSteamID:
-          type: string
-        DisplayName:
-          type: string
-        Ping:
-          type: integer
-        Address:
-          type: string
-        EntityId:
-          type: integer
-        ConnectedSeconds:
-          type: integer
-        ViolationLevel:
-          type: number
-        CurrentLevel:
-          type: number
-        Health:
-          type: number
+        SteamID: { type: string }
+        OwnerSteamID: { type: string }
+        DisplayName: { type: string }
+        Ping: { type: integer }
+        Address: { type: string }
+        EntityId: { type: integer }
+        ConnectedSeconds: { type: integer }
+        ViolationLevel: { type: number }
+        CurrentLevel: { type: number }
+        Health: { type: number }
         Position:
-          $ref: "#/components/schemas/Vector3"
-        IsMuted:
-          type: boolean
-        TeamID:
-          type: integer
+          $ref: '#/components/schemas/Vector3'
+        IsMuted: { type: boolean }
+        TeamID: { type: integer }
 
     Vector3:
       type: object
       properties:
-        x:
-          type: number
-        y:
-          type: number
-        z:
-          type: number
+        x: { type: number }
+        y: { type: number }
+        z: { type: number }
 
     ServerInfo:
       type: object
       properties:
-        Hostname:
-          type: string
-        MaxPlayers:
-          type: integer
-        Players:
-          type: integer
-        Queued:
-          type: integer
-        Joining:
-          type: integer
-        ReservedSlots:
-          type: integer
-        EntityCount:
-          type: integer
-        GameTime:
-          type: string
-        Uptime:
-          type: integer
-        Map:
-          type: string
-        Framerate:
-          type: number
-        Memory:
-          type: integer
-        MemoryUsageSystem:
-          type: integer
-        Collections:
-          type: integer
-        NetworkIn:
-          type: integer
-        NetworkOut:
-          type: integer
-        Restarting:
-          type: boolean
-        SaveCreatedTime:
-          type: string
-        Version:
-          type: integer
-        Protocol:
-          type: string
+        Hostname: { type: string }
+        MaxPlayers: { type: integer }
+        Players: { type: integer }
+        Queued: { type: integer }
+        Joining: { type: integer }
+        ReservedSlots: { type: integer }
+        EntityCount: { type: integer }
+        GameTime: { type: string }
+        Uptime: { type: integer }
+        Map: { type: string }
+        Framerate: { type: number }
+        Memory: { type: integer }
+        MemoryUsageSystem: { type: integer }
+        Collections: { type: integer }
+        NetworkIn: { type: integer }
+        NetworkOut: { type: integer }
+        Restarting: { type: boolean }
+        SaveCreatedTime: { type: string }
+        Version: { type: integer }
+        Protocol: { type: string }
 
     FileTreeNode:
       type: object
       properties:
-        name:
-          type: string
+        name: { type: string }
         type:
           type: string
           enum: [file, directory]
-        size:
-          type: integer
+        size: { type: integer }
         children:
           type: array
           items:
-            $ref: "#/components/schemas/FileTreeNode"
-
-  responses: {}
+            $ref: '#/components/schemas/FileTreeNode'
 
 tags:
   - name: Logs
-    description: Логи сервера и плагинов
   - name: Server
-    description: Управление сервером
   - name: Players
-    description: Игроки и статистика
   - name: Settings
-    description: Конфигурации плагинов
   - name: Auth
-    description: Авторизация
   - name: Events
-    description: SSE события
